@@ -1,3 +1,4 @@
+% get handle to mex object
 clear all
 format long
 opensimroot = 'C:\opensim_install\';
@@ -20,10 +21,7 @@ osimvizCPtr = uint64(osimviz.getCPtr(osimviz));%we have to pass this
 extvis = extend_visualizer(osimvizCPtr);
 % releases the object instance
 pause(1)
-sviz = myModel.getVisualizer.getSimbodyVisualizer();
-sviz.setBackgroundColor(org.opensim.modeling.Vec3(255));
-pause(1)
-extvis.delete();
-clear('extvis');
-sviz.setBackgroundColor(org.opensim.modeling.Vec3(0,255,0));
+sviz = osimviz.getSimbodyVisualizer();
+sviz.setBackgroundColor(org.opensim.modeling.Vec3(255))
 sviz.shutdown();
+extvis.delete();
