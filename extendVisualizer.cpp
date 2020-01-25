@@ -134,11 +134,11 @@ extendVisualizer(const __int64 cPtr){
 	}
 	virtual ~extendVisualizer(){
 		mexPrintf("Calling destructor.\n");
-  delete m_visualizer;
-  delete simbodyVisualizer;
+  //delete m_visualizer;
+  //delete simbodyVisualizer;
 	}
 private:
-    ModelVisualizer* m_visualizer = NULL;
+	ModelVisualizer* m_visualizer = NULL;
     SimTK::Visualizer* simbodyVisualizer = NULL;
 };
 class SaveImageTask : public ParallelWorkQueue::Task {
