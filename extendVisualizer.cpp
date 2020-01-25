@@ -122,22 +122,21 @@ using namespace OpenSim;
 using namespace SimTK;
 class extendVisualizer {
 public:
-    extendVisualizer(const __int64 cPtr){
-        mexPrintf("Calling constructor.\n");
-        m_visualizer = (ModelVisualizer *)cPtr;
-        simbodyVisualizer = &(m_visualizer->updSimbodyVisualizer());
-        simbodyVisualizer->setShowSimTime(false);
-        simbodyVisualizer->setShowFrameNumber(false);
-        simbodyVisualizer->setBackgroundType(SimTK::Visualizer::BackgroundType(2));
-        simbodyVisualizer->setBackgroundColor(SimTK::Vec3(0,0,0));
-        simbodyVisualizer->saveImage();
-        mexPrintf("Model:'%s'.\n", (m_visualizer->getModel()).getName());
-    }
-    virtual ~extendVisualizer(){
-        mexPrintf("Calling destructor.\n");
-        delete m_visualizer;
-        delete simbodyVisualizer;
-    }
+extendVisualizer(const __int64 cPtr){        
+  mexPrintf("Calling constructor.\n");
+  m_visualizer = (ModelVisualizer *)cPtr;
+  simbodyVisualizer = &(m_visualizer->updSimbodyVisualizer());
+  simbodyVisualizer->setShowSimTime(false);
+  simbodyVisualizer->setShowFrameNumber(false);
+  simbodyVisualizer->setBackgroundType(SimTK::Visualizer::BackgroundType(2));
+  simbodyVisualizer->setBackgroundColor(SimTK::Vec3(0,0,0));
+  mexPrintf("Model:'%s'.\n", (m_visualizer->getModel()).getName());
+	}
+	virtual ~extendVisualizer(){
+		mexPrintf("Calling destructor.\n");
+  delete m_visualizer;
+  delete simbodyVisualizer;
+	}
 private:
     ModelVisualizer* m_visualizer = NULL;
     SimTK::Visualizer* simbodyVisualizer = NULL;
