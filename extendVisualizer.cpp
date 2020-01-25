@@ -16,6 +16,7 @@ public:
   simbodyVisualizer->setShowFrameNumber(false);
   simbodyVisualizer->setBackgroundType(SimTK::Visualizer::BackgroundType(2));
   simbodyVisualizer->setBackgroundColor(SimTK::Vec3(0,0,0));
+  simbodyVisualizer->saveImage();
   mexPrintf("Model:'%s'.\n", (m_visualizer->getModel()).getName());
 	}
 	virtual ~extendVisualizer(){
