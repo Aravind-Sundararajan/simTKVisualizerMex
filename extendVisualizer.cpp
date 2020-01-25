@@ -20,12 +20,12 @@ public:
 	}
 	virtual ~extendVisualizer(){
 		mexPrintf("Calling destructor.\n");
-  delete m_visualizer;
-  delete simbodyVisualizer;
+  //delete m_visualizer;
+  //delete simbodyVisualizer;
 	}
 private:
 	ModelVisualizer* m_visualizer = NULL;
- SimTK::Visualizer* simbodyVisualizer = NULL;
+    SimTK::Visualizer* simbodyVisualizer = NULL;
 };
 template class mexplus::Session<extendVisualizer>;
 namespace {
