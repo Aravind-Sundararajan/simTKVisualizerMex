@@ -1,0 +1,119 @@
+#include <Simbody.h>
+#include <OpenSim.h>
+#include "C:\Users\aravi\Documents\MATLAB\mexplus-master\include\mexplus.h"
+
+#include <vector>
+using namespace std;
+using namespace mexplus;
+using namespace OpenSim;
+using namespace SimTK;
+class extendVisualizer {
+public:
+	extendVisualizer(const __int64 cPtr){        
+  mexPrintf("Calling constructor.\n");
+  m_visualizer = (ModelVisualizer *)cPtr;
+  simbodyVisualizer = &(m_visualizer->updSimbodyVisualizer());
+  simbodyVisualizer->setShowSimTime(false);
+  simbodyVisualizer->setShowFrameNumber(false);
+  simbodyVisualizer->setBackgroundType(SimTK::Visualizer::BackgroundType(2));
+  simbodyVisualizer->setBackgroundColor(SimTK::Vec3(0,0,0));
+  simbodyVisualizer->saveImage();
+  mexPrintf("Model:'%s'.\n", (m_visualizer->getModel()).getName());
+	}
+	virtual ~extendVisualizer(){
+		mexPrintf("Calling destructor.\n");
+  delete m_visualizer;
+  delete simbodyVisualizer;
+	}
+ class SaveImageTask : public ParallelWorkQueue::Task {
+public:
+    Array_<unsigned char> data;
+    SaveImageTask(const string& filename, int width, int height) : filename(filename), width(width), height(height), data(width*height*3) {
+    }
+    void execute() override {
+        // Flip the image vertically, since OpenGL and PNG use different row orders.
+
+        const int rowLength = 3*width;
+        for (int row = 0; row < height/2; ++row) {
+            const int base1 = row*rowLength;
+            const int base2 = (height-1-row)*rowLength;
+            for (int i = 0; i < rowLength; i++) {
+                unsigned char temp = data[base1+i];
+                data[base1+i] = data[base2+i];
+                data[base2+i] = temp;
+            }
+        }
+        LodePNG::encode(filename, data.empty() ? 0 : &data[0], width, height, 2, 8);
+    }
+private:
+    string filename;
+    int width, height;
+};
+
+static void writeImage(const string& filename) {
+    int width = ((viewWidthPixels+3)/4)*4; // must be a multiple of 4 pixels
+    int height = viewHeightPixels;
+
+    // Create offscreen buffers for rendering the image.
+
+    GLuint frameBuffer, colorBuffer, depthBuffer;
+    glGenFramebuffersEXT(1, &frameBuffer);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frameBuffer);
+    glGenRenderbuffersEXT(1, &colorBuffer);
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, colorBuffer);
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGB8, width, height);
+    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_RENDERBUFFER_EXT, colorBuffer);
+    glGenRenderbuffersEXT(1, &depthBuffer);
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, depthBuffer);
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT24, width, height);
+    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, depthBuffer);
+
+    // Render the image and load it into memory.
+
+    renderScene();
+    SaveImageTask* task = new SaveImageTask(filename, width, height);
+    Array_<unsigned char>& data = task->data;
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, &data[0]);
+    glDeleteRenderbuffersEXT(1, &colorBuffer);
+    glDeleteRenderbuffersEXT(1, &depthBuffer);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+    glDeleteFramebuffersEXT(1, &frameBuffer);
+
+    // Add it to the queue to be saved to disk.
+
+    imageSaverQueue.addTask(task);
+}
+
+static void saveImage() {
+    struct stat statInfo;
+    int counter = 0;
+    string filename;
+    do {
+        counter++;
+        stringstream namestream;
+        namestream << simulatorExecutableName.c_str() << "_";
+        namestream << counter;
+        namestream << ".png";
+        filename = namestream.str();
+    } while (stat(filename.c_str(), &statInfo) == 0);
+    writeImage(filename);
+    setOverlayMessage("Image saved as:\n"+filename);
+}
+private:
+	ModelVisualizer* m_visualizer = NULL;
+ SimTK::Visualizer* simbodyVisualizer = NULL;
+};
+template class mexplus::Session<extendVisualizer>;
+namespace {
+	MEX_DEFINE(new) (int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]){
+		InputArguments input(nrhs, prhs, 1);
+		OutputArguments output(nlhs, plhs, 1);
+		output.set(0, Session<extendVisualizer>::create(new extendVisualizer(input.get<__int64>(0))));
+	}
+	MEX_DEFINE(delete) (int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]){
+		InputArguments input(nrhs, prhs, 1);
+		OutputArguments output(nlhs, plhs, 0);
+		Session<extendVisualizer>::destroy(input.get(0));
+	}
+} //namespace
+MEX_DISPATCH
